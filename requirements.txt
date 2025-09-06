@@ -1,0 +1,27 @@
+# Dependencias del Proyecto Weibull
+# ===================================
+# 
+# Para instalar todas las dependencias:
+# pip install -r requirements.txt
+
+# Análisis de datos
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Cálculos científicos
+scipy>=1.10.0
+
+# Visualización
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Lectura de Excel
+openpyxl>=3.1.0
+
+# Testing (desarrollo)
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Dependencias adicionales para reproducibilidad
+setuptools>=65.0.0
+wheel>=0.40.0
