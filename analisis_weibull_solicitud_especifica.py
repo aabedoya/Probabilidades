@@ -321,8 +321,61 @@ class AnalisisWeibullEspecifico:
             'velocidades': velocidades
         }
     
+    def calcular_velocidades_caracteristicas(self, resultado: Dict) -> Dict:
+        """
+        Calcular velocidades características usando ecuaciones 5 y 6:
+        - Velocidad más probable (ec. 5)
+        - Velocidad de máxima energía eólica (ec. 6)
+        """
+        k = resultado['k']
+        c = resultado['c']
+        municipio = resultado['municipio']
+        
+        print(f"\n⚡ VELOCIDADES CARACTERÍSTICAS - {municipio.upper()}")
+        print("=" * 50)
+        
+        # ECUACIÓN 5: Velocidad más probable
+        print(f"\n🎯 ECUACIÓN 5: v_mp = c × ((k-1)/k)^(1/k)")
+        
+        if k > 1:
+            v_mp = c * np.power((k-1)/k, 1/k)
+            print(f"   ")
+            print(f"   v_mp = {c:.4f} × (({k:.4f}-1)/{k:.4f})^(1/{k:.4f})")
+            print(f"   v_mp = {c:.4f} × ({k-1:.4f}/{k:.4f})^{1/k:.4f}")
+            print(f"   v_mp = {v_mp:.4f} m/s")
+        else:
+            v_mp = 0
+            print(f"   ⚠️ k ≤ 1: La velocidad más probable es 0 m/s")
+            print(f"   (La función es monótona decreciente)")
+        
+        # ECUACIÓN 6: Velocidad de máxima energía
+        print(f"\n⚡ ECUACIÓN 6: v_maxE = c × ((k+2)/k)^(1/k)")
+        
+        v_maxE = c * np.power((k+2)/k, 1/k)
+        print(f"   ")
+        print(f"   v_maxE = {c:.4f} × (({k:.4f}+2)/{k:.4f})^(1/{k:.4f})")
+        print(f"   v_maxE = {c:.4f} × ({k+2:.4f}/{k:.4f})^{1/k:.4f}")
+        print(f"   v_maxE = {v_maxE:.4f} m/s")
+        
+        # Análisis de resultados
+        v_mean = resultado['v_promedio']
+        print(f"\n📊 RESUMEN DE VELOCIDADES CARACTERÍSTICAS:")
+        print(f"   • Velocidad media: {v_mean:.2f} m/s")
+        print(f"   • Velocidad más probable: {v_mp:.2f} m/s")
+        print(f"   • Velocidad de máxima energía: {v_maxE:.2f} m/s")
+        
+        return {
+            'municipio': municipio,
+            'v_media': v_mean,
+            'v_probable': v_mp,
+            'v_maxE': v_maxE
+        }
+
     def sustituir_funcion_densidad(self, resultado: Dict) -> None:
-        """Sustituir parámetros en la función de densidad f(v) - Ecuación 1"""
+        """
+        Sustituir parámetros en la función de densidad f(v) - Ecuación 1 y analizar
+        el comportamiento de la distribución
+        """
         municipio = resultado['municipio']
         k = resultado['k']
         c = resultado['c']
@@ -340,24 +393,88 @@ class AnalisisWeibullEspecifico:
         print(f"   ")
         print(f"   fᵥ = ({k_sobre_c:.4f}) × (v/{c:.4f})^{k_menos_1:.4f} × e^[-(v/{c:.4f})^{k:.4f}]")
         
-        # Graficar función de densidad vs histograma
+        # Graficar función de densidad vs histograma con más detalles
         velocidades = resultado['velocidades']
-        v = np.linspace(0.1, np.max(velocidades) * 1.2, 1000)
+        v_max = np.max(velocidades) * 1.2
+        v = np.linspace(0.1, v_max, 1000)
         f_v = (k/c) * np.power(v/c, k-1) * np.exp(-np.power(v/c, k))
         
-        plt.figure(figsize=(12, 8))
-        plt.hist(velocidades, bins=40, density=True, alpha=0.6, color='lightblue',
-                edgecolor='black', label='Datos observados')
-        plt.plot(v, f_v, 'r-', linewidth=3, 
-                label=f'f(v) Weibull (k={k:.3f}, c={c:.2f})')
-        plt.xlabel('Velocidad del viento (m/s)')
-        plt.ylabel('Densidad de probabilidad')
-        plt.title(f'Función de Densidad de Weibull - {municipio}')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
+        # Configurar el estilo de la gráfica
+        plt.style.use('seaborn-v0_8-darkgrid')
+        fig, ax = plt.subplots(figsize=(14, 8))
+        
+        # Graficar histograma normalizado
+        n, bins, patches = ax.hist(velocidades, bins=40, density=True, alpha=0.6,
+                                 color='skyblue', edgecolor='black',
+                                 label='Datos observados')
+        
+        # Graficar función de densidad
+        ax.plot(v, f_v, 'r-', linewidth=3, 
+                label=f'Distribución Weibull\nk={k:.3f}, c={c:.2f} m/s')
+        
+        # Añadir líneas verticales para estadísticos importantes
+        v_mean = np.mean(velocidades)
+        v_median = np.median(velocidades)
+        v_mode = c * np.power((k-1)/k, 1/k) if k > 1 else 0
+        
+        ax.axvline(v_mean, color='green', linestyle='--', alpha=0.8,
+                  label=f'Media: {v_mean:.2f} m/s')
+        ax.axvline(v_median, color='orange', linestyle='--', alpha=0.8,
+                  label=f'Mediana: {v_median:.2f} m/s')
+        ax.axvline(v_mode, color='purple', linestyle='--', alpha=0.8,
+                  label=f'Moda: {v_mode:.2f} m/s')
+        
+        # Mejorar el aspecto visual
+        ax.set_xlabel('Velocidad del viento (m/s)', fontsize=12)
+        ax.set_ylabel('Densidad de probabilidad', fontsize=12)
+        ax.set_title(f'Distribución de Weibull vs Datos Observados - {municipio}',
+                    fontsize=14, pad=20, fontweight='bold')
+        
+        # Ajustar la leyenda
+        ax.legend(loc='upper right', bbox_to_anchor=(1, 1), fontsize=10)
+        
+        # Añadir cuadrícula
+        ax.grid(True, alpha=0.3, linestyle='--')
+        
+        # Ajustar márgenes
+        plt.tight_layout()
         plt.show()
         
-        print(f"✅ Función de densidad calculada y graficada")
+        # Analizar el comportamiento
+        print(f"\n📊 ANÁLISIS DEL COMPORTAMIENTO - {municipio.upper()}")
+        print("=" * 50)
+        print(f"1. Forma de la distribución:")
+        if k < 1:
+            print("   • Forma exponencial decreciente (k < 1)")
+            print("   • Alta frecuencia de velocidades bajas")
+        elif 1 < k < 2:
+            print("   • Forma asimétrica positiva moderada (1 < k < 2)")
+            print("   • Buena distribución de velocidades bajas y medias")
+        elif 2 <= k < 3:
+            print("   • Forma aproximadamente simétrica (2 ≤ k < 3)")
+            print("   • Distribución balanceada de velocidades")
+        else:
+            print("   • Forma similar a la normal (k ≥ 3)")
+            print("   • Concentración alrededor de la media")
+        
+        print(f"\n2. Estadísticos principales:")
+        print(f"   • Media: {v_mean:.2f} m/s")
+        print(f"   • Mediana: {v_median:.2f} m/s")
+        print(f"   • Moda: {v_mode:.2f} m/s")
+        
+        print(f"\n3. Interpretación del ajuste:")
+        # Calcular error cuadrático medio entre histograma y función
+        hist_centers = (bins[:-1] + bins[1:]) / 2
+        f_v_hist = (k/c) * np.power(hist_centers/c, k-1) * np.exp(-np.power(hist_centers/c, k))
+        rmse = np.sqrt(np.mean((n - f_v_hist)**2))
+        
+        print(f"   • Error cuadrático medio: {rmse:.4f}")
+        if rmse < 0.1:
+            print("   • Excelente ajuste entre datos y modelo")
+        elif rmse < 0.2:
+            print("   • Buen ajuste entre datos y modelo")
+        else:
+            print("   • Ajuste moderado entre datos y modelo")
     
     def ejecutar_analisis_completo(self) -> None:
         """Ejecutar análisis completo respondiendo a las dos solicitudes específicas"""
@@ -377,9 +494,74 @@ class AnalisisWeibullEspecifico:
         print(f"SOLICITUD 2: CÁLCULO DE PARÁMETROS WEIBULL")
         print("="*70)
         
+        resultados_weibull = {}
+        velocidades_caracteristicas = {}
+        
         for municipio in [municipio_1, municipio_2]:
             resultado = self.calcular_parametros_weibull(municipio)
+            resultados_weibull[municipio] = resultado
             self.sustituir_funcion_densidad(resultado)
+            velocidades_caracteristicas[municipio] = self.calcular_velocidades_caracteristicas(resultado)
+        
+        # SOLICITUD 3 y 4: Análisis comparativo del potencial eólico
+        print(f"\n" + "="*70)
+        print(f"ANÁLISIS COMPARATIVO DEL POTENCIAL EÓLICO")
+        print("="*70)
+        
+        print(f"\n📊 TABLA COMPARATIVA DE VELOCIDADES CARACTERÍSTICAS")
+        print("-" * 75)
+        print(f"{'Municipio':<12} {'V. Media':<12} {'V. Probable':<12} {'V. Máx.Energía':<15} {'k':<8} {'c (m/s)'}")
+        print("-" * 75)
+        
+        for municipio in [municipio_1, municipio_2]:
+            v_caract = velocidades_caracteristicas[municipio]
+            res_weibull = resultados_weibull[municipio]
+            print(f"{municipio:<12} {v_caract['v_media']:<12.2f} "
+                  f"{v_caract['v_probable']:<12.2f} {v_caract['v_maxE']:<15.2f} "
+                  f"{res_weibull['k']:<8.2f} {res_weibull['c']:.2f}")
+        
+        print("\n🔍 ANÁLISIS DE POTENCIAL EÓLICO:")
+        print("=" * 40)
+        
+        # Determinar ciudad con mayor potencial
+        v_maxE_1 = velocidades_caracteristicas[municipio_1]['v_maxE']
+        v_maxE_2 = velocidades_caracteristicas[municipio_2]['v_maxE']
+        
+        ciudad_mayor_potencial = municipio_1 if v_maxE_1 > v_maxE_2 else municipio_2
+        diferencia_porcentual = abs(v_maxE_1 - v_maxE_2) / min(v_maxE_1, v_maxE_2) * 100
+        
+        print(f"1. Velocidades de máxima energía:")
+        print(f"   • {municipio_1}: {v_maxE_1:.2f} m/s")
+        print(f"   • {municipio_2}: {v_maxE_2:.2f} m/s")
+        print(f"   • Diferencia porcentual: {diferencia_porcentual:.1f}%")
+        
+        print(f"\n2. Comparación de forma (k):")
+        k1 = resultados_weibull[municipio_1]['k']
+        k2 = resultados_weibull[municipio_2]['k']
+        print(f"   • {municipio_1}: k = {k1:.2f}")
+        print(f"   • {municipio_2}: k = {k2:.2f}")
+        
+        print(f"\n3. Conclusiones:")
+        print(f"   • {ciudad_mayor_potencial.upper()} muestra mayor potencial eólico")
+        print(f"   • Razones principales:")
+        
+        if ciudad_mayor_potencial == municipio_1:
+            v_maxE = v_maxE_1
+            k = k1
+        else:
+            v_maxE = v_maxE_2
+            k = k2
+            
+        print(f"     - Mayor velocidad de máxima energía: {v_maxE:.2f} m/s")
+        if k > 2:
+            print(f"     - Distribución más estable (k = {k:.2f})")
+            print(f"     - Menor variabilidad en las velocidades")
+        elif 1.5 <= k <= 2:
+            print(f"     - Distribución moderadamente variable (k = {k:.2f})")
+            print(f"     - Balance entre estabilidad y rachas de viento")
+        else:
+            print(f"     - Alta variabilidad en velocidades (k = {k:.2f})")
+            print(f"     - Requiere sistemas de control más robustos")
         
         # Resumen final
         print(f"\n🎯 RESUMEN FINAL")
@@ -393,6 +575,16 @@ class AnalisisWeibullEspecifico:
         print(f"   • Parámetros k y c calculados usando ecuaciones 3 y 4")
         print(f"   • Valores sustituidos en función f(v) (ecuación 1)")
         print(f"   • Gráficas de funciones de densidad generadas")
+        print(f"")
+        print(f"✅ SOLICITUD 3 COMPLETADA:")
+        print(f"   • Análisis detallado de la forma de las distribuciones")
+        print(f"   • Comparación de ajuste entre datos y modelo")
+        print(f"   • Interpretación del comportamiento de las variables")
+        print(f"")
+        print(f"✅ SOLICITUD 4 COMPLETADA:")
+        print(f"   • Velocidades características calculadas (ec. 5 y 6)")
+        print(f"   • Análisis comparativo del potencial eólico")
+        print(f"   • {ciudad_mayor_potencial.upper()} identificada con mayor potencial")
 
 
 def main():
