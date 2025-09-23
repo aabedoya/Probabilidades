@@ -321,6 +321,222 @@ class AnalisisWeibullEspecifico:
             'velocidades': velocidades
         }
     
+    def calcular_cuartiles_y_rango_intercuartilico(self, resultado: Dict) -> Dict:
+        """
+        ACTIVIDAD 5: Calcular Q1, Q3 y rango intercuartílico usando distribución Weibull
+        """
+        k = resultado['k']
+        c = resultado['c']
+        municipio = resultado['municipio']
+        
+        print(f"\n📊 ACTIVIDAD 5: CUARTILES Y RANGO INTERCUARTÍLICO - {municipio.upper()}")
+        print("=" * 65)
+        
+        # Para distribución Weibull: F(v) = 1 - e^(-(v/c)^k)
+        # Para percentil p: v_p = c × (-ln(1-p))^(1/k)
+        
+        print(f"📐 FÓRMULA PARA PERCENTILES WEIBULL:")
+        print(f"   v_p = c × (-ln(1-p))^(1/k)")
+        print(f"   Donde: k = {k:.4f}, c = {c:.4f} m/s")
+        print(f"")
+        
+        # Cuartil 1 (percentil 25)
+        p1 = 0.25
+        ln_term_1 = -np.log(1 - p1)
+        exp_term_1 = 1/k
+        power_result_1 = np.power(ln_term_1, exp_term_1)
+        Q1 = c * power_result_1
+        
+        print(f"� CÁLCULO DEL CUARTIL 1 (Q1 - percentil 25%):")
+        print(f"   Q1 = c × (-ln(1-p))^(1/k)")
+        print(f"   Q1 = {c:.4f} × (-ln(1-0.25))^(1/{k:.4f})")
+        print(f"   Q1 = {c:.4f} × (-ln(0.75))^({exp_term_1:.4f})")
+        print(f"   Q1 = {c:.4f} × ({ln_term_1:.4f})^({exp_term_1:.4f})")
+        print(f"   Q1 = {c:.4f} × {power_result_1:.4f}")
+        print(f"   Q1 = {Q1:.4f} m/s")
+        
+        # Cuartil 3 (percentil 75)
+        p3 = 0.75
+        ln_term_3 = -np.log(1 - p3)
+        exp_term_3 = 1/k
+        power_result_3 = np.power(ln_term_3, exp_term_3)
+        Q3 = c * power_result_3
+        
+        print(f"\n🔢 CÁLCULO DEL CUARTIL 3 (Q3 - percentil 75%):")
+        print(f"   Q3 = c × (-ln(1-p))^(1/k)")
+        print(f"   Q3 = {c:.4f} × (-ln(1-0.75))^(1/{k:.4f})")
+        print(f"   Q3 = {c:.4f} × (-ln(0.25))^({exp_term_3:.4f})")
+        print(f"   Q3 = {c:.4f} × ({ln_term_3:.4f})^({exp_term_3:.4f})")
+        print(f"   Q3 = {c:.4f} × {power_result_3:.4f}")
+        print(f"   Q3 = {Q3:.4f} m/s")
+        
+        # Rango intercuartílico
+        IQR = Q3 - Q1
+        
+        print(f"\n📏 RANGO INTERCUARTÍLICO (IQR):")
+        print(f"   IQR = Q3 - Q1")
+        print(f"   IQR = {Q3:.4f} - {Q1:.4f}")
+        print(f"   IQR = {IQR:.4f} m/s")
+        
+        print(f"\n📋 TABLA RESUMEN:")
+        print(f"   +------------------+------------+")
+        print(f"   | Estadístico      | Valor      |")
+        print(f"   +------------------+------------+")
+        print(f"   | Q1 (25%)         | {Q1:8.2f} m/s |")
+        print(f"   | Q3 (75%)         | {Q3:8.2f} m/s |")
+        print(f"   | IQR              | {IQR:8.2f} m/s |")
+        print(f"   +------------------+------------+")
+        print(f"   El 50% central de los datos está entre {Q1:.2f} y {Q3:.2f} m/s")
+        
+        return {
+            'municipio': municipio,
+            'Q1': Q1,
+            'Q3': Q3,
+            'IQR': IQR,
+            'k': k,
+            'c': c
+        }
+    
+    def calcular_probabilidad_entre_cuartiles(self, resultado_cuartiles: Dict) -> None:
+        """
+        ACTIVIDAD 6: Calcular probabilidad entre Q1 y Q3 usando F(v)
+        """
+        municipio = resultado_cuartiles['municipio']
+        Q1 = resultado_cuartiles['Q1']
+        Q3 = resultado_cuartiles['Q3']
+        k = resultado_cuartiles['k']
+        c = resultado_cuartiles['c']
+        
+        print(f"\n📈 ACTIVIDAD 6: PROBABILIDAD ENTRE CUARTILES - {municipio.upper()}")
+        print("=" * 60)
+        
+        # Función de distribución acumulada Weibull: F(v) = 1 - e^(-(v/c)^k)
+        print(f"📐 FUNCIÓN DE DISTRIBUCIÓN ACUMULADA WEIBULL:")
+        print(f"   F(v) = 1 - e^(-(v/c)^k)")
+        print(f"   Donde: k = {k:.4f}, c = {c:.4f} m/s")
+        print(f"")
+        
+        # Cálculo paso a paso para F(Q1)
+        ratio_Q1 = Q1/c
+        power_Q1 = np.power(ratio_Q1, k)
+        exp_Q1 = np.exp(-power_Q1)
+        F_Q1 = 1 - exp_Q1
+        
+        print(f"🔢 CÁLCULO PASO A PASO DE F(Q1):")
+        print(f"   F(Q1) = F({Q1:.4f}) = 1 - e^(-({Q1:.4f}/{c:.4f})^{k:.4f})")
+        print(f"   ")
+        print(f"   Paso 1: (v/c) = {Q1:.4f}/{c:.4f} = {ratio_Q1:.4f}")
+        print(f"   Paso 2: (v/c)^k = ({ratio_Q1:.4f})^{k:.4f} = {power_Q1:.4f}")
+        print(f"   Paso 3: e^(-(v/c)^k) = e^(-{power_Q1:.4f}) = {exp_Q1:.4f}")
+        print(f"   Paso 4: F(Q1) = 1 - {exp_Q1:.4f} = {F_Q1:.4f}")
+        
+        # Cálculo paso a paso para F(Q3)
+        ratio_Q3 = Q3/c
+        power_Q3 = np.power(ratio_Q3, k)
+        exp_Q3 = np.exp(-power_Q3)
+        F_Q3 = 1 - exp_Q3
+        
+        print(f"\n🔢 CÁLCULO PASO A PASO DE F(Q3):")
+        print(f"   F(Q3) = F({Q3:.4f}) = 1 - e^(-({Q3:.4f}/{c:.4f})^{k:.4f})")
+        print(f"   ")
+        print(f"   Paso 1: (v/c) = {Q3:.4f}/{c:.4f} = {ratio_Q3:.4f}")
+        print(f"   Paso 2: (v/c)^k = ({ratio_Q3:.4f})^{k:.4f} = {power_Q3:.4f}")
+        print(f"   Paso 3: e^(-(v/c)^k) = e^(-{power_Q3:.4f}) = {exp_Q3:.4f}")
+        print(f"   Paso 4: F(Q3) = 1 - {exp_Q3:.4f} = {F_Q3:.4f}")
+        
+        # Probabilidad entre Q1 y Q3
+        prob_entre_cuartiles = F_Q3 - F_Q1
+        porcentaje = prob_entre_cuartiles * 100
+        
+        print(f"\n🎯 CÁLCULO FINAL DE LA PROBABILIDAD:")
+        print(f"   P(Q1 ≤ V ≤ Q3) = F(Q3) - F(Q1)")
+        print(f"   P({Q1:.2f} ≤ V ≤ {Q3:.2f}) = {F_Q3:.4f} - {F_Q1:.4f}")
+        print(f"   P({Q1:.2f} ≤ V ≤ {Q3:.2f}) = {prob_entre_cuartiles:.4f}")
+        print(f"   P({Q1:.2f} ≤ V ≤ {Q3:.2f}) = {porcentaje:.2f}%")
+        
+        print(f"\n📋 TABLA RESUMEN DE PROBABILIDADES:")
+        print(f"   +------------------+------------+")
+        print(f"   | Función          | Valor      |")
+        print(f"   +------------------+------------+")
+        print(f"   | F(Q1)            | {F_Q1:8.4f}   |")
+        print(f"   | F(Q3)            | {F_Q3:8.4f}   |")
+        print(f"   | P(Q1≤V≤Q3)       | {prob_entre_cuartiles:8.4f}   |")
+        print(f"   | Porcentaje       | {porcentaje:8.2f}%  |")
+        print(f"   +------------------+------------+")
+        
+        print(f"\n✅ INTERPRETACIÓN:")
+        print(f"   La probabilidad de que la velocidad del viento esté entre")
+        print(f"   {Q1:.2f} m/s y {Q3:.2f} m/s es del {porcentaje:.2f}%")
+        print(f"   (Esto corresponde al 50% central de la distribución)")
+    
+    def calcular_probabilidad_superior_percentil60(self, resultado: Dict) -> None:
+        """
+        ACTIVIDAD 7: Calcular probabilidad de velocidades superiores al percentil 60
+        """
+        k = resultado['k']
+        c = resultado['c']
+        municipio = resultado['municipio']
+        
+        print(f"\n⚡ ACTIVIDAD 7: PROBABILIDAD SUPERIOR AL PERCENTIL 60 - {municipio.upper()}")
+        print("=" * 70)
+        
+        # Calcular percentil 60 paso a paso
+        p60 = 0.60
+        ln_term = -np.log(1 - p60)
+        exp_term = 1/k
+        power_result = np.power(ln_term, exp_term)
+        percentil_60 = c * power_result
+        
+        print(f"📐 CÁLCULO PASO A PASO DEL PERCENTIL 60:")
+        print(f"   v_60 = c × (-ln(1-p))^(1/k)")
+        print(f"   Donde: p = 0.60, k = {k:.4f}, c = {c:.4f} m/s")
+        print(f"   ")
+        print(f"   Paso 1: (1-p) = 1-0.60 = 0.40")
+        print(f"   Paso 2: -ln(1-p) = -ln(0.40) = {ln_term:.4f}")
+        print(f"   Paso 3: 1/k = 1/{k:.4f} = {exp_term:.4f}")
+        print(f"   Paso 4: (-ln(1-p))^(1/k) = ({ln_term:.4f})^({exp_term:.4f}) = {power_result:.4f}")
+        print(f"   Paso 5: v_60 = {c:.4f} × {power_result:.4f} = {percentil_60:.4f} m/s")
+        
+        # Calcular F(percentil_60) paso a paso
+        ratio_p60 = percentil_60/c
+        power_p60 = np.power(ratio_p60, k)
+        exp_p60 = np.exp(-power_p60)
+        F_p60 = 1 - exp_p60
+        
+        print(f"\n📈 CÁLCULO PASO A PASO DE F(v_60):")
+        print(f"   F(v_60) = F({percentil_60:.4f}) = 1 - e^(-({percentil_60:.4f}/{c:.4f})^{k:.4f})")
+        print(f"   ")
+        print(f"   Paso 1: (v/c) = {percentil_60:.4f}/{c:.4f} = {ratio_p60:.4f}")
+        print(f"   Paso 2: (v/c)^k = ({ratio_p60:.4f})^{k:.4f} = {power_p60:.4f}")
+        print(f"   Paso 3: e^(-(v/c)^k) = e^(-{power_p60:.4f}) = {exp_p60:.4f}")
+        print(f"   Paso 4: F(v_60) = 1 - {exp_p60:.4f} = {F_p60:.4f}")
+        
+        # Probabilidad de velocidades superiores al percentil 60
+        prob_superior_p60 = 1 - F_p60
+        porcentaje_superior = prob_superior_p60 * 100
+        
+        print(f"\n🎯 CÁLCULO DE LA PROBABILIDAD SUPERIOR:")
+        print(f"   P(V > v_60) = 1 - F(v_60)")
+        print(f"   P(V > {percentil_60:.4f}) = 1 - {F_p60:.4f}")
+        print(f"   P(V > {percentil_60:.4f}) = {prob_superior_p60:.4f}")
+        print(f"   P(V > {percentil_60:.4f}) = {porcentaje_superior:.2f}%")
+        
+        print(f"\n📋 TABLA RESUMEN:")
+        print(f"   +------------------+------------+")
+        print(f"   | Concepto         | Valor      |")
+        print(f"   +------------------+------------+")
+        print(f"   | Percentil 60     | {percentil_60:8.2f} m/s |")
+        print(f"   | F(P60)           | {F_p60:8.4f}   |")
+        print(f"   | P(V > P60)       | {prob_superior_p60:8.4f}   |")
+        print(f"   | Porcentaje       | {porcentaje_superior:8.2f}%  |")
+        print(f"   +------------------+------------+")
+        
+        print(f"\n✅ INTERPRETACIÓN:")
+        print(f"   La probabilidad de registrar velocidades superiores a")
+        print(f"   {percentil_60:.2f} m/s (percentil 60) es del {porcentaje_superior:.2f}%")
+        print(f"   Esto significa que el {porcentaje_superior:.0f}% de las observaciones")
+        print(f"   superan esta velocidad de referencia.")
+
     def calcular_velocidades_caracteristicas(self, resultado: Dict) -> Dict:
         """
         Calcular velocidades características usando ecuaciones 5 y 6:
@@ -563,6 +779,48 @@ class AnalisisWeibullEspecifico:
             print(f"     - Alta variabilidad en velocidades (k = {k:.2f})")
             print(f"     - Requiere sistemas de control más robustos")
         
+        # ACTIVIDADES 5, 6 y 7: Análisis estadístico adicional
+        print(f"\n" + "="*70)
+        print(f"ACTIVIDADES 5, 6 Y 7: ANÁLISIS ESTADÍSTICO ADICIONAL")
+        print("="*70)
+        
+        resultados_cuartiles = {}
+        
+        for municipio in [municipio_1, municipio_2]:
+            print(f"\n{'='*70}")
+            print(f"ANÁLISIS PARA {municipio.upper()}")
+            print("="*70)
+            
+            # Actividad 5: Cuartiles y rango intercuartílico
+            resultado_cuartiles = self.calcular_cuartiles_y_rango_intercuartilico(resultados_weibull[municipio])
+            resultados_cuartiles[municipio] = resultado_cuartiles
+            
+            # Actividad 6: Probabilidad entre cuartiles
+            self.calcular_probabilidad_entre_cuartiles(resultado_cuartiles)
+            
+            # Actividad 7: Probabilidad superior al percentil 60
+            self.calcular_probabilidad_superior_percentil60(resultados_weibull[municipio])
+        
+        # Comparación final de cuartiles entre ciudades
+        print(f"\n" + "="*70)
+        print(f"COMPARACIÓN FINAL DE CUARTILES ENTRE CIUDADES")
+        print("="*70)
+        
+        print(f"\n📊 TABLA COMPARATIVA DE CUARTILES:")
+        print("-" * 60)
+        print(f"{'Municipio':<12} {'Q1 (m/s)':<12} {'Q3 (m/s)':<12} {'IQR (m/s)':<12}")
+        print("-" * 60)
+        
+        for municipio in [municipio_1, municipio_2]:
+            r_cuart = resultados_cuartiles[municipio]
+            print(f"{municipio:<12} {r_cuart['Q1']:<12.2f} {r_cuart['Q3']:<12.2f} {r_cuart['IQR']:<12.2f}")
+        
+        print(f"\n🔍 INTERPRETACIÓN FINAL:")
+        print(f"   • Rango intercuartílico más amplio indica mayor dispersión")
+        print(f"   • Cuartiles más altos sugieren mejores condiciones eólicas")
+        print(f"   • La probabilidad entre cuartiles es siempre 50% por definición")
+        print(f"   • La probabilidad superior al percentil 60 es siempre 40% por definición")
+
         # Resumen final
         print(f"\n🎯 RESUMEN FINAL")
         print("=" * 30)
@@ -585,6 +843,18 @@ class AnalisisWeibullEspecifico:
         print(f"   • Velocidades características calculadas (ec. 5 y 6)")
         print(f"   • Análisis comparativo del potencial eólico")
         print(f"   • {ciudad_mayor_potencial.upper()} identificada con mayor potencial")
+        print(f"")
+        print(f"✅ ACTIVIDAD 5 COMPLETADA:")
+        print(f"   • Cuartiles Q1 y Q3 calculados para ambas ciudades")
+        print(f"   • Rango intercuartílico determinado")
+        print(f"")
+        print(f"✅ ACTIVIDAD 6 COMPLETADA:")
+        print(f"   • Probabilidad entre cuartiles calculada usando F(v)")
+        print(f"   • Verificación teórica del 50% central")
+        print(f"")
+        print(f"✅ ACTIVIDAD 7 COMPLETADA:")
+        print(f"   • Percentil 60 calculado para ambas ciudades")
+        print(f"   • Probabilidad superior al percentil 60 determinada")
 
 
 def main():
